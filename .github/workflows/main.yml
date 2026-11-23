@@ -1,0 +1,35 @@
+name: Build APK
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Если в репозиторий загружен только zip — распаковать его
+      - name: Unzip project if needed
+        run: |
+          if [ ! -f settings.gradle ] && [ -f spoilerskip.zip ]; then
+            mkdir -p project
+            unzip -q spoilerskip.zip -d project
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build debug APK
+        run: |
+          if [ -f settings.gradle ]; then cd .; else cd project; fi
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SpoilerSkip-apk
+          path: "**/app/build/outputs/apk/debug/*.apk"
